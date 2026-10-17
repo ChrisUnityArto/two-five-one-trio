@@ -582,6 +582,7 @@ function chart(key, str, barBeats = 4) {
 const RM_A = 'Ebm69 | Cm7b5:4 Abm9:2 Db13:2 | Ebm9 Ab13 | Bm9 E13 Bbm9 Eb13 | Abm9 Db13 | Gbmaj7:4 G7alt:2 Ab7alt:2 |';
 const RM_END = 'Cm7b5 F7alt Fm7b5 Bb7alt | Ebm69 |';
 const RHY_A = 'Bbmaj7 Bdim7 | Cm9 F13 | Bbmaj7 Bdim7 | Cm9 F13 | Bbmaj7 Bb13 | Ebmaj7 Edim7 | Bbmaj7 F13 |';
+const MOAN = 'Fm9 Ab13 | G9 Gb9/C |';
 const CHE_A = 'Bbmaj7 | Bbmaj7 | Fm9 | Bb13 | Ebmaj7 | Ebmaj7 | Ab13 | Ab13 | Bbmaj7 | Bbmaj7 | C13 | C13 | Cm9 | F13 |';
 const STANDARDS = [
   { name: 'Donna Lee', key: 8, form: 'A8 B8 A8 C8', bars: '32 bars, A–B–A–C',
@@ -629,9 +630,21 @@ const STANDARDS = [
   { name: 'Black Pearls', key: 0, form: 'A8 A8 B8 C8', bars: '32 bars, A–A–B–C',
     chords: chart(0, 'Em9 | Am9 | Dm9 | G7b9 | Em9 Eb9 | Dm7b5 G7b9 | Fmaj7:2 Em7:1 Dm7:1 | C69 | Em9 | Am9 | Dm9 | G7b9 | Em9 Eb9 | Dm7b5 G7b9 | Fmaj7:2 Em7:1 Dm7:1 | C69 | Gm9 | C7b9 | Fmaj7 | Fmaj7 | Fm9 | Bb7b9 | Ebmaj7 | Dm9 G7b9 | Em9 | A13 | Dm9 | G7b9 | Em9 Eb9 | Dm7b5 G7b9 | C69 | C69'),
     text: 'John Coltrane, 1958, from a transcribed chart. A medium swing in C that starts on iii and backs into C through a ii–V chain, with E♭9 as a chromatic passing chord and IV–iii–ii walking down in bar 7. The bridge drops a whole step at a time, F to E♭, before a ii–V back to the iii. The written tag (D♭Δ–E♭13–A♭Δ–D♭Δ) is left out, as it is on solos.' },
-  { name: 'Bye Bye Blackbird', key: 5, form: 'A8 B8 C8 A\u20328', bars: '32 bars, A–B–C–A′',
-    chords: chart(5, 'Fmaj7 | Fmaj7 | Gm9 C13 | Fmaj7 | F69 | Abdim7 | Gm9 C13 | Am9 D7b9 | Gm9 | Gm9 | D7b9 | Gm9 | Gm9 | C7b9 | F69 | F69 | Fmaj7 | E13 | Eb13 | D7b9 | Gm9 | Gm9 | Gm7b5 | C13 | Fmaj7 | Fmaj7 | Gm9 C13 | Am7b5 D7b9 | Gm9 | C13 | F69 | Gm9 C13'),
-    text: 'Ray Henderson and Mort Dixon, 1926; Miles Davis’s 1956 recording made it a jazz standard. Each eight bars is different, though jazzstandards.com calls it A–A–B–A. The first rises through a passing A♭°7 to the ii; the second sits on G minor with a D7 pulling into it. The third slides down by half steps, F–E7–E♭7–D7, into G minor, and the last eight echoes the first. The last bar is a ii–V back to the top.' },
+  { name: 'Bye Bye Blackbird', key: 5, form: 'A8 A8 B8 A8', bars: '32 bars, AABA',
+    chords: chart(5, 'Fmaj7 | Gm9 C13 | Fmaj7 | Gm9 C13 | Fmaj7 | Am7b5 D7b9 | Gm9 | C13 | Gm9 | D7b9 | Gm9 | C13 | Gm9 | C13 | F69 | F69 | F7 | E13 | Eb13 | D7b9 | Gm9 | Gm9 | Db13 | C13 | Fmaj7 | Gm9 C13 | Fmaj7 | Am7b5 D7b9 | Gm9 | C13 | Fmaj7 | Gm9 C13'),
+    text: 'Ray Henderson and Mort Dixon, 1926; Miles Davis’s 1956 recording made it a jazz standard. This follows the chart on standardrepertoire.com. The first eight bars rock between FΔ7 and a ii–V, then a minor ii–V (A–7♭5 D7♭9) leads to G minor. The second eight sits on G–7 with D7 pulling into it. The bridge starts on F7 and slides down by half steps, E7–E♭7–D7, into G minor, and a D♭7 tritone sub brings back C7. The last eight is the first again, ending on a ii–V back to the top.' },
+  { name: 'Moanin’', key: 5, form: 'A8 A8 B8 A8', minor: true, bars: '32 bars, AABA',
+    chords: chart(5, `${MOAN} ${MOAN} ${MOAN} ${MOAN} ${MOAN} ${MOAN} ${MOAN} Fm9 Gm7 | Ab69:2 Ab9:1 Adim7:1 | Bbm9 Ab9 | G7b9 C7#9 | Fm9 | F7#5 | Bbm9 Ab9 | G7b9 | Gm7b5 | C7#9 | ${MOAN} ${MOAN} ${MOAN} ${MOAN}`.replace(/\|\s*$/, '')),
+    text: 'Bobby Timmons, 1958, from Art Blakey and the Jazz Messengers’ album of the same name. These are the solo changes from the chart on standardrepertoire.com; the head’s call-and-response is left out. The A section repeats a two-bar cell in F minor: F–7 to A♭7, then G9 to G♭9 over C, a tritone sub sitting on the dominant. The second A turns up through A♭6 and A°7 into the bridge, which runs ii–V-style chords in B♭ minor and F minor, with an F7♯5 pulling to the iv.' },
+  { name: 'There Will Never Be Another You', key: 3, form: 'A8 B8 A8 C8', bars: '32 bars, A–B–A–C',
+    chords: chart(3, 'Ebmaj7 | Ebmaj7 | Dm7b5 | G7b9 | Cm9 | Cm9 | Bbm9 | Eb13 | Abmaj7 | Db7#11 | Ebmaj7 | Cm9 | F13 | F13 | Fm9 | Bb13 | Ebmaj7 | Ebmaj7 | Dm7b5 | G7b9 | Cm9 | Cm9 | Bbm9 | Eb13 | Abmaj7 | Db7#11 | Ebmaj7 | Am7b5 D7b9 | Ebmaj7 Ab13 | Gm9 C13 | Fm9 Bb13 | Eb69 Bb13'),
+    text: 'Harry Warren and Mack Gordon, 1942, in E♭, from the chart on standardrepertoire.com. It opens with a minor ii–V into C minor, the vi, then B♭–7 E♭7 turns toward A♭, the IV. A♭ goes to D♭7, the backdoor dominant, and back home. The last eight run a ii–V into E♭ through A–7♭5 D7, then a iii–VI–ii–V turnaround.' },
+  { name: 'Take the “A” Train', key: 0, form: 'A8 A8 B8 A8', bars: '32 bars, AABA',
+    chords: chart(0, 'C69 | C69 | D7#11 | D7#11 | Dm9 | G13 | C69 | Dm9 G13 | C69 | C69 | D7#11 | D7#11 | Dm9 | G13 | C69 | Gm9 C13 | Fmaj7 | Fmaj7 | Fmaj7 | Fmaj7 | D13 | D13 | Dm9 | G13 G7b9 | C69 | C69 | D7#11 | D7#11 | Dm9 | G13 | C69 | Dm9 G13'),
+    text: 'Billy Strayhorn, 1939, the Duke Ellington band’s theme, from the chart on standardrepertoire.com. The A section’s colour is bar 3: D7♯11, a II7 with a raised 11th, the ♯4 of the key that the melody leans on. The second A ends with a ii–V into F, and the bridge sits on FΔ7 for four bars, then D7 and a ii–V back to C.' },
+  { name: 'Blue Monk', key: 10, bars: '12-bar blues',
+    chords: chart(10, 'Bb13 | Eb13 | Bb13 | Bb13 | Eb13 | Eb13 | Bb13 | Bb13 | F13 | F13 | Bb13 | Bb13'),
+    text: 'Thelonious Monk, 1954, a B♭ blues, from the chart on standardrepertoire.com. The changes are the bare-bones blues: I7, a quick IV7 in bar 2, IV7 in bars 5–6, and two bars of V7 in bars 9–10 with no IV after it. Monk’s melody does the work, walking up chromatically through each chord.' },
   { name: 'God Only Knows', key: 4, form: 'Intro8 Verse8 Refrain4 Verse8 Refrain4 Instrumental12 Tag8', bars: '52 bars, intro, two verses, instrumental, tag',
     chords: chart(4, 'A | E | F#m7 | E | A | E/G# | F#m7 | A/E | D/A | Bm6 | F#m7 | B7/A | E | B7 | E | A#m7b5 | A | E/G# | F#m7 | E | D/A | Bm7 | F#m7 | B7/A | E | B7 | E | A#m7b5 | A | E/G# | F#m7 | F#m7 | A/E | G | A/E | G | G/D | Em | Bm7 | E | A | E7 | A | D#m7b5 | D | A/C# | Bm7 | A | D | A/C# | Bm7 | A'),
     text: 'Brian Wilson and Tony Asher, 1966: not a jazz tune, so here’s how the trio handles it. The key is E, but the verse never lands on E in root position at first: it floats on D/A and B/A, which is why the tonic feels so unsteady. The refrain walks down A, E/G♯, F♯–7, E; the second time it hangs on F♯–7 and drops straight into the instrumental, which rocks between A/E and G. The tag drops a whole step to D for the closing rounds. Changes from a full-song chord sheet, one chord per bar; the tag is two rounds of the sheet’s last line, ending on A, standing in for the fade.' },
@@ -1440,16 +1453,21 @@ function bassEchoes(L) {
 let ctx = null, master = null, revIn = null, noise = null, sess = null;
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 const mixGain = v => v * v * 1.25;
+// Phones and tablets get more headroom against crackle; the extra latency doesn't matter here.
+const MOBILE = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+const AHEAD = MOBILE ? 0.6 : 0.3;
 
 function initAudio() {
   const AC = window.AudioContext || window.webkitAudioContext;
-  try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
+  try { ctx = new AC({ latencyHint: MOBILE ? 0.25 : 'playback' }); } catch (e) {
+    try { ctx = new AC({ latencyHint: 'playback' }); } catch (e2) { ctx = new AC(); }
+  }
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -14; comp.ratio.value = 3;
   master = ctx.createGain(); master.gain.value = 0.85;
   master.connect(comp).connect(ctx.destination);
   const conv = ctx.createConvolver();
-  const len = Math.floor(ctx.sampleRate * 1.8);
+  const len = Math.floor(ctx.sampleRate * (MOBILE ? 1.2 : 1.8));
   const ir = ctx.createBuffer(2, len, ctx.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const d = ir.getChannelData(ch);
@@ -1701,7 +1719,7 @@ function scheduleBeat(b, t) {
   visuals.push(...ev);
 }
 function scheduler() {
-  while (nextBeatTime < ctx.currentTime + 0.3) {
+  while (nextBeatTime < ctx.currentTime + AHEAD) {
     scheduleBeat(beatIdx, nextBeatTime);
     nextBeatTime += 60 / state.tempo;
     beatIdx++;
