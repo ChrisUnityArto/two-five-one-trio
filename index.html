@@ -1442,17 +1442,18 @@ const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 const mixGain = v => v * v * 1.25;
 
 function initAudio() {
-  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -14; comp.ratio.value = 3;
   master = ctx.createGain(); master.gain.value = 0.85;
   master.connect(comp).connect(ctx.destination);
   const conv = ctx.createConvolver();
-  const len = Math.floor(ctx.sampleRate * 2.4);
+  const len = Math.floor(ctx.sampleRate * 1.8);
   const ir = ctx.createBuffer(2, len, ctx.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const d = ir.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.8);
   }
   conv.buffer = ir;
   revIn = ctx.createGain(); revIn.gain.value = 0.2;
@@ -1476,10 +1477,10 @@ function makeSession() {
   };
   return { out, piano: bus(0.12, 'piano', 5200), rh: bus(0.28, 'rh', 6500), bass: bus(0, 'bass'), drums: bus(-0.22, 'drums') };
 }
-function noiseSrc(t) {
+function noiseSrc(t, len = 0.5) {
   const s = ctx.createBufferSource(); s.buffer = noise;
   s.playbackRate.value = 0.9 + Math.random() * 0.2;
-  s.start(t, Math.random() * 0.5); s.stop(t + 1.5);
+  s.start(t, Math.random() * 0.4); s.stop(t + len);
   return s;
 }
 
@@ -1504,7 +1505,7 @@ function ep(midi, t, dur, vel, dest) {
   amp.gain.setTargetAtTime(peak * 0.32, t + 0.004, 0.55);
   amp.gain.setTargetAtTime(0, t + dur, 0.06);
   car.connect(amp).connect(dest);
-  const end = t + dur + 0.5;
+  const end = t + dur + 0.36;
   [car, mod, tine].forEach(o => { o.start(t); o.stop(end); });
 }
 function pianoChord(notes, t, dur, vel, dest) {
@@ -1517,7 +1518,7 @@ function bass(midi, t, dur, vel, dest) {
   const sine = ctx.createOscillator(); sine.frequency.value = f;
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.6;
   lp.frequency.setValueAtTime(Math.min(f * 9, 2400), t);
-  lp.frequency.setTargetAtTime(f * 2.2, t, 0.09);
+  lp.frequency.setTargetAtTime(f * 3, t, 0.09);
   const sg = ctx.createGain(); sg.gain.value = 0.9;
   const amp = ctx.createGain();
   const peak = 0.3 * vel;
@@ -1530,10 +1531,10 @@ function bass(midi, t, dur, vel, dest) {
   amp.connect(dest);
   saw.start(t); sine.start(t); saw.stop(t + dur + 0.3); sine.stop(t + dur + 0.3);
   // finger pluck
-  const n = noiseSrc(t);
-  const nlp = ctx.createBiquadFilter(); nlp.type = 'lowpass'; nlp.frequency.value = 900;
+  const n = noiseSrc(t, 0.08);
+  const nlp = ctx.createBiquadFilter(); nlp.type = 'bandpass'; nlp.frequency.value = Math.min(f * 4, 700); nlp.Q.value = 1.4;
   const ng = ctx.createGain();
-  ng.gain.setValueAtTime(0.12 * vel, t); ng.gain.setTargetAtTime(0, t, 0.012);
+  ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(0.06 * vel, t + 0.002); ng.gain.setTargetAtTime(0, t + 0.002, 0.009);
   n.connect(nlp).connect(ng).connect(dest);
 }
 
@@ -1591,7 +1592,7 @@ function snare(t, vel, dest) {
 // Brushes: a sweep is band-passed noise that swells and fades; a tap is a short, dry snare hit.
 function brushSweep(t, dur, vel, dest) {
   dur = Math.min(dur, 1.4);
-  const n = noiseSrc(t);
+  const n = noiseSrc(t, dur + 0.05);
   const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.6;
   bp.frequency.setValueAtTime(2400, t); bp.frequency.linearRampToValueAtTime(3600, t + dur);
   const g = ctx.createGain();
@@ -1700,7 +1701,7 @@ function scheduleBeat(b, t) {
   visuals.push(...ev);
 }
 function scheduler() {
-  while (nextBeatTime < ctx.currentTime + 0.15) {
+  while (nextBeatTime < ctx.currentTime + 0.3) {
     scheduleBeat(beatIdx, nextBeatTime);
     nextBeatTime += 60 / state.tempo;
     beatIdx++;
