@@ -139,7 +139,16 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   padding: 4px 12px 2px 14px; min-height: 112px;
   display: flex; flex-direction: column; justify-content: space-between; min-width: 0;
 }
-.bar:nth-child(4n) { border-right: 2px solid var(--ink); }
+.bar.r4 { border-right: 2px solid var(--ink); }
+.sec { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 4px 0 -4px; }
+.sec .mark {
+  font-family: var(--f-display); font-weight: 800; font-size: 20px; line-height: 1;
+  border: 2px solid var(--ink); border-radius: 3px; padding: 3px 7px 1px; color: var(--ink);
+  transition: color 120ms, border-color 120ms;
+}
+.sec .span { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.sec::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
+.sec.on .mark { color: var(--brass); border-color: var(--brass); }
 .bar.rep-start { border-left: 5px solid var(--ink); padding-left: 26px; }
 .bar.rep-start::before {
   content: ""; position: absolute; left: 7px; top: calc(50% + 6px);
@@ -255,14 +264,14 @@ kbd { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--rule)
 }
 @media (max-width: 640px) {
   .staff { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .bar:nth-child(4n) { border-right: 0; }
-  .bar:nth-child(2n) { border-right: 2px solid var(--ink); }
+  .bar.r4 { border-right: 0; }
+  .bar.r2 { border-right: 2px solid var(--ink); }
   .bar.rep-end { border-right: 5px solid var(--ink); }
   .sym { font-size: 28px; }
   .chorus { margin-left: 0; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .slash, .sym, .key { transition: none; }
+  .slash, .sym, .key, .sec .mark { transition: none; }
   .slash.on { transform: none; }
 }
 </style>
@@ -331,6 +340,7 @@ kbd { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--rule)
         <div class="seg" role="group" aria-labelledby="formLbl" id="formSeg">
           <button type="button" id="form0" data-form="0" aria-pressed="true">ii–V–I</button>
           <button type="button" id="form1" data-form="1" aria-pressed="false">12-bar blues</button>
+          <button type="button" id="form2" data-form="2" aria-pressed="false">Standards</button>
         </div>
       </div>
       <div class="ctrl">
@@ -449,6 +459,77 @@ const Q = {
   dim7: { sym: '°7',   v: [3, 6, 9, 12],  d: ['♭3','♭5','°7','1'],  third: 3, fifth: 6, seventh: 9 },
 };
 
+// Lead-sheet shorthand for the standards: bars split by "|", chords in a bar split by spaces and
+// sharing the bar evenly unless one carries ":beats". Roots are absolute in the tune's written key.
+const NOTE_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const SUFFIX = { maj7: 'maj7', maj9: 'maj9', '69': '69', '6': '69', m7: 'm7', m9: 'm9', m69: 'm69', m6: 'm69',
+  m7b5: 'm7b5', '7': '7', '9': '9', '13': '13', '7b9': '7b9', '7alt': 'alt', dim7: 'dim7' };
+function chart(key, str, barBeats = 4) {
+  const out = [];
+  str.split('|').map(b => b.trim()).filter(Boolean).forEach(bar => {
+    const toks = bar.split(/\s+/);
+    toks.forEach(tok => {
+      const [sym, beats] = tok.split(':');
+      const [head, over] = sym.split('/');
+      const m = head.match(/^([A-G])([b#]?)(.*)$/);
+      if (!m || !(m[3] in SUFFIX)) throw new Error('Bad chord ' + tok);
+      const pcOf = (l, acc) => NOTE_PC[l] + (acc === 'b' ? -1 : acc === '#' ? 1 : 0);
+      const row = [mod12(pcOf(m[1], m[2]) - key), SUFFIX[m[3]], beats ? +beats : barBeats / toks.length];
+      if (over) { const b = over.match(/^([A-G])([b#]?)$/); row.push(mod12(pcOf(b[1], b[2]) - key)); }
+      out.push(row);
+    });
+  });
+  return out;
+}
+const RM_A = 'Ebm69 | Cm7b5:4 Abm9:2 Db13:2 | Ebm9 Ab13 | Bm9 E13 Bbm9 Eb13 | Abm9 Db13 | Gbmaj7:4 G7alt:2 Ab7alt:2 |';
+const RM_END = 'Cm7b5 F7alt Fm7b5 Bb7alt | Ebm69 |';
+const RHY_A = 'Bbmaj7 Bdim7 | Cm9 F13 | Bbmaj7 Bdim7 | Cm9 F13 | Bbmaj7 Bb13 | Ebmaj7 Edim7 | Bbmaj7 F13 |';
+const CHE_A = 'Bbmaj7 | Bbmaj7 | Fm9 | Bb13 | Ebmaj7 | Ebmaj7 | Ab13 | Ab13 | Bbmaj7 | Bbmaj7 | C13 | C13 | Cm9 | F13 |';
+const STANDARDS = [
+  { name: 'Donna Lee', key: 8, form: 'A8 B8 A8 C8', bars: '32 bars, A–B–A–C',
+    chords: chart(8, 'Abmaj7 | F7b9 | Bb13 | Bb13 | Bbm9 | Eb13 | Abmaj7 | Ebm9 D13 | Dbmaj7 | Dbm9 Gb13 | Abmaj7 | F7b9 | Bb13 | Bb13 | Bbm9 | Eb13 | Abmaj7 | F7b9 | Bb13 | Bb13 | C7b9 | Gm7b5 C7alt | Fm9 | C7alt | Fm9 | C7alt | Fm9 | Bdim7 | Cm7 F7b9 | Bbm9 Eb13 | Ab69 | Bbm9 Eb13'),
+    text: 'The bebop line on the changes of “(Back Home Again in) Indiana”, recorded by Charlie Parker’s quintet in 1947 and often credited to Miles Davis. The harmony is long dominant chains: VI7 to II7 to ii–V–I, with a detour to D♭ and, in the last eight bars, F minor.' },
+  { name: 'Like Someone in Love', key: 0, form: 'A8 B8 A8 B8', bars: '32 bars, A–B–A–B',
+    chords: chart(0, 'Cmaj7 E7b9 | Am9 | D9 F13 | Em9 A7b9 | Dm9 | F#m9 B7b9 | Em9 | Gm9 C13 | F69 | Bm9 E13 | Amaj7 | Amaj7 | Am9 | D13 | Dm9 | G7alt | Cmaj7 E7b9 | Am9 | D9 F13 | Em9 A7b9 | Dm9 | F#m9 B7b9 | Em9 | Gm9 C13 | Fmaj7 | Bm9 E13 | Amaj7 | D13 D#dim7 | Em9 A7b9 | Dm9 G13 | C69 | Dm9 G13'),
+    text: 'Jimmy Van Heusen and Johnny Burke, 1944, in the Real Book key of C (the original is E♭). The slash-chord bass lines are left to the walking bass. The A section works through ii–Vs toward IV; the B section goes from IV up to A major, then a ii–V turns back to C.' },
+  { name: 'Cherokee', key: 10, form: 'A16 A16 B16 A16', bars: '64 bars, AABA',
+    chords: chart(10, `${CHE_A} Bb69 | Cm9 F13 | ${CHE_A} Bb69 | Bb69 | C#m9 | F#13 | Bmaj7 | Bmaj7 | Bm9 | E13 | Amaj7 | Amaj7 | Am9 | D13 | Gmaj7 | Gmaj7 | Gm9 | C13 | Cm9 | F7alt | ${CHE_A} Bb69 | Cm9 F13`),
+    text: 'Ray Noble, 1938, the tune Charlie Parker built “Ko-Ko” on. Sixteen-bar sections, so the form is 64 bars. The bridge is the famous part: ii–Vs falling a whole step at a time through B, A and G before a ii–V back to B♭.' },
+  { name: 'I Got Rhythm', key: 10, form: 'A8 A8 B8 A8', bars: '32 bars, AABA',
+    chords: chart(10, `${RHY_A} Cm9 F13 | ${RHY_A} Bb69 | D13 | D13 | G13 | G13 | C13 | C13 | F13 | F13 | ${RHY_A} Cm9 F13`),
+    text: 'George Gershwin, 1930, the source of “rhythm changes”. The A sections are I–ii–V cycles with passing diminished chords and a IV in bar 6. The bridge is a chain of dominants round the cycle of fifths, III7–VI7–II7–V7, two bars each.' },
+  { name: 'Ornithology', key: 7, form: 'A8 B8 A8 C8', bars: '32 bars, A–B–A–C',
+    chords: chart(7, 'Gmaj7 | Gmaj7 | Gm9 | C13 | Fmaj7 | Fmaj7 | Fm9 | Bb13 | Ebmaj7 | Am7b5 D7b9 | Gmaj7 | Am9 D13 | Bm9 | E7b9 | Am9 | D13 | Gmaj7 | Gmaj7 | Gm9 | C13 | Fmaj7 | Fmaj7 | Fm9 | Bb13 | Ebmaj7 | Am7b5 D7b9 | Gmaj7 | Cm9 F13 | Bm9 E7b9 | Am9 D13 | Gmaj7 E7b9 | Am9 D13'),
+    text: 'Charlie Parker and Benny Harris, 1946, on the changes of “How High the Moon”. Each four bars a ii–V drops the key a whole step, G to F to E♭, then a minor ii–V brings it back to G.' },
+  { name: 'All the Things You Are', key: 8, form: 'A8 A8 B8 A12', bars: '36 bars, A–A–B–A plus a tag',
+    chords: chart(8, 'Fm9 | Bbm9 | Eb13 | Abmaj7 | Dbmaj7 | Dm9 G13 | Cmaj7 | Cmaj7 | Cm9 | Fm9 | Bb13 | Ebmaj7 | Abmaj7 | Am7b5 D7b9 | Gmaj7 | Gmaj7 | Am9 | D13 | Gmaj7 | Gmaj7 | F#m7b5 | B7b9 | Emaj7 | C7alt | Fm9 | Bbm9 | Eb13 | Abmaj7 | Dbmaj7 | Dbm9 Gb13 | Cm9 | Bdim7 | Bbm9 | Eb13 | Abmaj7 | Gm7b5 C7alt'),
+    text: 'Jerome Kern, 1939. Each A section runs down the cycle of fifths and lands a major third away (A♭ to C, E♭ to G). The bridge sits in G, then E, and an augmented C7 turns it back to F minor. The last A is stretched to 12 bars.' },
+  { name: '’Round Midnight', key: 3, form: 'A16 A16 B16 A16', minor: true, feel: 'ballad', bars: '32 bars, AABA, in half time',
+    chords: chart(3, `${RM_A} Cm7b5 B13 | Bb7alt | ${RM_A} ${RM_END} Cm7b5 F7alt | Bb13 | Cm7b5 F7alt | Bb13 | Abm9:4 Fm7b5:2 Bb7alt:2 | Ebm9:4 Cm7b5:2 F7alt:2 | Bbm9 Eb13 Abm9 Db13 | F#m9 B13 Fm7b5 Bb7alt | ${RM_A} ${RM_END}`, 8),
+    text: 'Thelonious Monk, 1944, a ballad in E♭ minor. It runs in half time here: each written bar takes two bars of the chart, so 180 BPM feels like a ballad at 90. The trio plays it that way: brushes, a bass note every two beats, and no echo triplets. Many bars hold three or four chords: falling ii–Vs and tritone subs, like B–7 E7 B♭–7 E♭7 in bar 4.' },
+  { name: 'Autumn Leaves', key: 7, form: 'A8 A8 B8 C8', minor: true, bars: '32 bars, A–A–B–C',
+    chords: chart(7, 'Cm9 | F13 | Bbmaj7 | Ebmaj7 | Am7b5 | D7b9 | Gm69 | Gm69 | Cm9 | F13 | Bbmaj7 | Ebmaj7 | Am7b5 | D7b9 | Gm69 | Gm69 | Am7b5 | D7b9 | Gm69 | Gm69 | Cm9 | F13 | Bbmaj7 | Ebmaj7 | Am7b5 | D7b9 | Gm9 Gb13 | Fm9 E13 | Ebmaj7 | Am7b5 D7b9 | Gm69 | Am7b5 D7b9'),
+    text: 'Joseph Kosma, 1945, in G minor. A major ii–V–I to the relative B♭, then a minor ii–V–i to G minor, over and over. Near the end the bass slides down by half steps, G–7 G♭7 F–7 E7, into E♭.' },
+  { name: 'Solar', key: 0, minor: true, bars: '12 bars',
+    chords: chart(0, 'Cm69 | Cm69 | Gm9 | C13 | Fmaj7 | Fmaj7 | Fm9 | Bb13 | Ebmaj7 | Ebm9 Ab13 | Dbmaj7 | Dm7b5 G7alt'),
+    text: 'Credited to Miles Davis, 1954. Twelve bars that never sit still: C minor turns into a ii–V to F major, F minor into a ii–V to E♭, E♭ minor into one to D♭, and a minor ii–V brings it back to C minor.' },
+  { name: 'Blue Bossa', key: 0, form: 'A8 B8', minor: true, bars: '16 bars',
+    chords: chart(0, 'Cm69 | Cm69 | Fm9 | Fm9 | Dm7b5 | G7b9 | Cm69 | Cm69 | Ebm9 | Ab13 | Dbmaj7 | Dbmaj7 | Dm7b5 | G7alt | Cm69 | Dm7b5 G7alt'),
+    text: 'Kenny Dorham, 1963. Sixteen bars in C minor with a ii–V to D♭ major, the ♭II, in the middle, then a minor ii–V home. It’s written as a bossa nova; the trio swings it.' },
+  { name: 'Black Pearls', key: 0, form: 'A8 A8 B8 C8', bars: '32 bars, A–A–B–C',
+    chords: chart(0, 'Em9 | Am9 | Dm9 | G7b9 | Em9 Eb9 | Dm7b5 G7b9 | Fmaj7:2 Em7:1 Dm7:1 | C69 | Em9 | Am9 | Dm9 | G7b9 | Em9 Eb9 | Dm7b5 G7b9 | Fmaj7:2 Em7:1 Dm7:1 | C69 | Gm9 | C7b9 | Fmaj7 | Fmaj7 | Fm9 | Bb7b9 | Ebmaj7 | Dm9 G7b9 | Em9 | A13 | Dm9 | G7b9 | Em9 Eb9 | Dm7b5 G7b9 | C69 | C69'),
+    text: 'John Coltrane, 1958, from a transcribed chart. A medium swing in C that starts on iii and backs into C through a ii–V chain, with E♭9 as a chromatic passing chord and IV–iii–ii walking down in bar 7. The bridge drops a whole step at a time, F to E♭, before a ii–V back to the iii. The written tag (D♭Δ–E♭13–A♭Δ–D♭Δ) is left out, as it is on solos.' },
+  { name: 'Bye Bye Blackbird', key: 5, form: 'A8 B8 C8 A\u20328', bars: '32 bars, A–B–C–A′',
+    chords: chart(5, 'Fmaj7 | Fmaj7 | Gm9 C13 | Fmaj7 | F69 | Abdim7 | Gm9 C13 | Am9 D7b9 | Gm9 | Gm9 | D7b9 | Gm9 | Gm9 | C7b9 | F69 | F69 | Fmaj7 | E13 | Eb13 | D7b9 | Gm9 | Gm9 | Gm7b5 | C13 | Fmaj7 | Fmaj7 | Gm9 C13 | Am7b5 D7b9 | Gm9 | C13 | F69 | Gm9 C13'),
+    text: 'Ray Henderson and Mort Dixon, 1926; Miles Davis’s 1956 recording made it a jazz standard. Each eight bars is different, though jazzstandards.com calls it A–A–B–A. The first rises through a passing A♭°7 to the ii; the second sits on G minor with a D7 pulling into it. The third slides down by half steps, F–E7–E♭7–D7, into G minor, and the last eight echoes the first. The last bar is a ii–V back to the top.' },
+  { name: 'God Only Knows', key: 4, form: 'Verse8 Refrain4 Verse8 Refrain4 Bridge12 Refrain4', bars: '40 bars, verse–refrain ×2, bridge, refrain',
+    chords: chart(4, 'Dmaj7/A | Bm7 | F#m7 | E69/B | Cdim7 | E69/B | A#m7b5 | A#m7b5 | Amaj7 | E69/G# | F#m7 | E69 | Dmaj7/A | Bm7 | F#m7 | E69/B | Cdim7 | E69/B | A#m7b5 | A#m7b5 | Amaj7 | E69/G# | F#m7 | E69 | Amaj7/E | Gmaj7/D | Amaj7/E | Gmaj7/D | Gmaj7/D | Em69 | Bm7/F# | E7/D | Amaj7/E | Fdim7 | Amaj7/E | D#m7b5 | Amaj7 | E69/G# | F#m7 | E69'),
+    text: 'Brian Wilson and Tony Asher, 1966: not a jazz tune, so here’s how the trio handles it. The key is E, but the verse never lands on E in root position: it floats on inversions (D/A, E/B) and a diminished chord, which is why the tonic feels so unsteady. The refrain finally walks down A, E/G♯, F♯–7, E. The bridge rocks between A/E and G/D. Slash chords set the bass note on the downbeat; the walking bass carries on from there. Changes from Gary Ewer’s analysis at Secrets of Songwriting; the intro and fade are left out.' },
+  { name: 'Confirmation', key: 5, form: 'A8 A8 B8 A8', bars: '32 bars, AABA',
+    chords: chart(5, 'Fmaj7 | Em7b5 A7b9 | Dm9 | Cm9 F13 | Bb13 | Eb13 D7b9 | G13 | Gm9 C13 | Fmaj7 | Em7b5 A7b9 | Dm9 | Cm9 F13 | Bb13 | Eb13 D13 | Gm9 C13 | F69 | Cm9 | Cm9 F7alt | Bbmaj7 Eb13 | Bb69 | Ebm9 | Ab13 | Dbmaj9 | Gm7b5 C7alt | Fmaj7 | Em7b5 A7b9 | Dm9 | Cm9 F13 | Bb13 | Eb13 D13 | Gm9 C13 | F69'),
+    text: 'Charlie Parker, 1946. The A sections step down through ii–Vs and a tritone sub (E♭9 for A–7 to D7). The bridge goes to B♭ and then D♭, each by a ii–V.' },
+];
+
 // Chords as [root offset from the key, quality, beats].
 const FORMS = [
   { name: 'ii–V–I', bars: '4 bars, repeated', defaultKey: 0, defaultVariant: 0, variants: [
@@ -464,6 +545,20 @@ const FORMS = [
       text: 'Home is approached from ♭VII7 instead of V7, set up by a minor iv chord. The dominant resolves up a whole step, which gives a softer, gospel-tinged cadence.' },
     { name: 'Turnaround', chords: [[0,'maj9',2],[9,'alt',2],[2,'m9',2],[7,'alt',2],[4,'m7',2],[3,'13',2],[2,'m9',2],[1,'13',2]],
       text: 'Two chords per bar: I–VI–ii–V, then iii–♭III–ii–♭II. Every dominant is altered or tritone-substituted, so the bass slides chromatically back to the top of the form.' },
+    { name: 'I–vi–ii–V', chords: [[0,'maj9',4],[9,'m9',4],[2,'m9',4],[7,'13',4]],
+      text: 'The one-six-two-five turnaround behind countless tunes and the A section of “I Got Rhythm”. All four chords come from the key, and the roots move down the cycle of fifths from vi.' },
+    { name: 'I–VI7–ii–V', chords: [[0,'maj9',4],[9,'7b9',4],[2,'m9',4],[7,'13',4]],
+      text: 'The vi chord becomes a dominant, VI7♭9, a secondary dominant that points straight at the ii. Its C♯ (in C) leads up by half step to the D of D–9.' },
+    { name: 'iii–vi–ii–V', chords: [[4,'m9',4],[9,'m9',4],[2,'m9',4],[7,'13',4]],
+      text: 'Starts on iii instead of I. E–7 shares three notes with CΔ7, so it still sounds like home, but it adds one more link to the chain of fifths: iii–vi–ii–V.' },
+    { name: 'Descending ii–Vs', chords: [[4,'m9',2],[9,'13',2],[3,'m9',2],[8,'13',2],[2,'m9',2],[7,'13',2],[0,'maj9',4]],
+      text: 'Three ii–Vs, each a half step lower than the last: iii–VI, ♭iii–♭VI, ii–V. The same shape slides down chromatically into I, like the bridge of “Joy Spring” or bar 9 of “Tune Up”.' },
+    { name: 'Cycle of dominants', chords: [[0,'maj9',8],[4,'7b9',4],[9,'13',4],[2,'13',4],[7,'13',4]],
+      text: 'I, then III7–VI7–II7–V7: every chord a dominant resolving down a fifth to the next, as in the bridge of rhythm changes. Each 3rd and 7th moves by half step into the next chord’s 7th and 3rd.' },
+    { name: 'IV–iv–I', chords: [[0,'maj9',4],[5,'maj7',4],[5,'m69',4],[0,'maj9',4]],
+      text: 'The minor plagal cadence. IV turns minor, and its ♭6 (A♭ in C) falls a half step to the 5th of I. No dominant at all, just a darker colour on the way home.' },
+    { name: 'Tadd Dameron turnaround', chords: [[0,'maj9',4],[3,'maj7',4],[8,'maj7',4],[1,'maj7',4]],
+      text: 'I–♭IIIΔ–♭VIΔ–♭IIΔ from “Lady Bird”: the I–vi–ii–V with each chord after the I swapped for a major 7th: ♭III for vi, ♭VI for ii, ♭II for V. The roots still fall in fifths from ♭III.' },
     { name: 'Coltrane changes', chords: [[2,'m7',2],[3,'7',2],[8,'maj7',2],[11,'7',2],[4,'maj7',2],[7,'7',2],[0,'maj7',4]],
       text: 'The cycle from “Giant Steps” and “Countdown”. The key centre drops by major thirds (♭VI, III, then I), and each new key is reached through its own dominant.' },
     { name: 'Minor ii–V–i', chords: [[2,'m7b5',4],[7,'7b9',4],[0,'m69',8]],
@@ -478,7 +573,10 @@ const FORMS = [
       text: 'Charlie Parker’s changes from “Blues for Alice” (1951). Bar 1 is a major 7th, not a dominant. A chain of ii–Vs then walks down by whole steps into the IV, and a second chain walks down by half steps toward the ii in bar 9. Only bar 5 still sounds like a plain blues.' },
     { name: 'Bird blues, tritone subs', chords: [[0,'maj9',4],[11,'m7b5',2],[4,'alt',2],[9,'m9',2],[8,'13',2],[7,'m9',2],[6,'13',2],[5,'13',4],[5,'m9',2],[4,'13',2],[4,'m9',2],[3,'13',2],[3,'m9',2],[2,'13',2],[2,'m9',4],[1,'13',4],[0,'maj9',2],[3,'13',2],[2,'m9',2],[1,'13',2]],
       text: 'Parker’s changes with every dominant swapped for the one a tritone away. Each ii now falls by half step into its substitute, so from bar 2 to bar 10 the roots almost all slide down chromatically.' },
+    { name: 'Minor blues', minor: true, chords: [[0,'m9',4],[5,'m9',4],[0,'m9',4],[7,'m7b5',2],[0,'7b9',2],[5,'m9',4],[5,'m9',4],[0,'m9',4],[0,'m9',4],[8,'13',4],[7,'alt',4],[0,'m69',4],[2,'m7b5',2],[7,'alt',2]],
+      text: 'Twelve bars in minor: i, a quick iv, a ii–V into the iv in bar 4, then ♭VI7 in bar 9 falls a half step to an altered V, and a minor ii–V turns it around. The Turnaround setting doesn’t apply to this one.' },
   ]},
+  { name: 'Standards', bars: '', defaultKey: 3, defaultVariant: 6, variants: STANDARDS },
 ];
 
 const KEY_LABELS = ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
@@ -505,7 +603,8 @@ let prevLine = 74;
 const rnd = a => a[Math.floor(Math.random() * a.length)];
 const chordAt = (L, b) => L.chords.find(c => b >= c.start && b < c.start + c.len);
 const chordAtList = (chords, b) => chords.find(c => b >= c.start && b < c.start + c.len);
-const chordHTML = (c, key) => `<span class="r">${spell(c.root, key)}</span><span class="q">${Q[c.q].sym}</span>`;
+const chordHTML = (c, key) => `<span class="r">${spell(c.root, key)}</span><span class="q">${Q[c.q].sym}</span>`
+  + (c.slash !== undefined ? `<span class="r">/${spell(c.slash, key)}</span>` : '');
 
 /* Rootless left hand */
 function voice(root, q, prev) {
@@ -556,7 +655,7 @@ function compRootless(chords) {
     for (let s = 0; s < c.len; s += 4) {
       const len = Math.min(4, c.len - s);
       const pattern = rnd(len === 4 ? (s === 0 ? COMP4 : COMP4.concat([[[5, 0.4]], [[3, 0.5]]])) : COMP2);
-      pattern.forEach(([p, d], hi) => {
+      pattern.filter(([p]) => p < len * 2).forEach(([p, d], hi) => {
         let pos = p, dur = d;
         if (hi === 0 && p === 0 && s === 0 && ci > 0 && Math.random() < 0.3) { pos = -1; dur += 0.5; }
         hits.push({ abs: (c.start + s) * 2 + pos, dur, chord: c, notes: c.voicing, vel: 0.62 + Math.random() * 0.3 });
@@ -630,7 +729,7 @@ function compBH(chords, key) {
       const turnaround = total === 48 && c.start + s >= 40;
       let pat = rnd(turnaround ? (len === 4 ? BH4_TURN : BH2_TURN) : (len === 4 ? BH4 : BH2));
       if (!pat.length && !hits.length) pat = [[0, 0, 1.2]];   // never start a chorus silent
-      pat.forEach(([p, step, d]) => {
+      pat.filter(([p]) => p < len * 2).forEach(([p, step, d]) => {
         const k = k0 + step * dir;
         const notes = drop2(src.x, sc, k);
         const isDim = mod8(k) % 2 === 1;
@@ -667,7 +766,8 @@ function walk(chords) {
     for (let s = 0; s < c.len; s += 4) chunks.push({ c, len: Math.min(4, c.len - s), first: s === 0 });
   });
   chunks.forEach(ch => {
-    ch.startPc = (ch.first || Math.random() < 0.5) ? ch.c.root : mod12(ch.c.root + Q[ch.c.q].third);
+    ch.startPc = ch.c.slash !== undefined ? ch.c.slash
+      : (ch.first || Math.random() < 0.5) ? ch.c.root : mod12(ch.c.root + Q[ch.c.q].third);
   });
   const out = [];
   let last = prevBass;
@@ -684,6 +784,7 @@ function walk(chords) {
       ]);
       for (const iv of pcs) { n = near(mod12(c.root + iv), last); out.push(n); last = n; }
     }
+    if (ch.len === 1) return;   // one-beat chord: just its own note
     const target = near(next.startPc, last);
     const r = Math.random();
     let a = r < 0.4 ? target + 1 : r < 0.8 ? target - 1 : (target + 7 > B_HI ? target - 5 : target + 7);
@@ -1034,7 +1135,7 @@ const makeLine = (chords, beats, key) =>
 function prepare() {
   const v = FORMS[state.form].variants[state.variant], key = state.key;
   let list = v.chords, turn = null;
-  if (state.form === 1 && state.turn !== 'written') {
+  if (state.form === 1 && state.turn !== 'written' && !v.minor) {
     const opts = TURNS.filter(t => t.chords);
     turn = state.turn === 'rotate'
       ? rnd(opts.filter(t => !(loop && loop.turn && loop.turn.id === t.id)))
@@ -1046,18 +1147,19 @@ function prepare() {
     list = [...head, [first[0], first[1], 2], ...turn.chords.map(([r, q]) => [r, q, 2])];
   }
   let beat = 0;
-  const chords = list.map(([r, q, len]) => {
+  const chords = list.map(([r, q, len, sb]) => {
     const c = { root: mod12(r + key), q, len, start: beat };
+    if (sb !== undefined) c.slash = mod12(sb + key);
     beat += len;
     return c;
   });
   const L = {
     form: state.form, key, vi: state.variant, turn, turnSetting: state.turn, chords, beats: beat,
     bass: walk(chords), hits: comp(chords, key),
-    line: makeLine(chords, beat, key),
+    line: makeLine(chords, beat, key), feel: v.feel || 'swing',
   };
-  L.bassTrip = bassEchoes(L);
-  L.drumTrip = drumEchoes(L);
+  L.bassTrip = L.feel === 'ballad' ? {} : bassEchoes(L);
+  L.drumTrip = L.feel === 'ballad' ? {} : drumEchoes(L);
   return L;
 }
 
@@ -1245,6 +1347,40 @@ function snare(t, vel, dest) {
   o.connect(og).connect(dest); o.start(t); o.stop(t + 0.3);
 }
 
+// Brushes: a sweep is band-passed noise that swells and fades; a tap is a short, dry snare hit.
+function brushSweep(t, dur, vel, dest) {
+  dur = Math.min(dur, 1.4);
+  const n = noiseSrc(t);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.6;
+  bp.frequency.setValueAtTime(2400, t); bp.frequency.linearRampToValueAtTime(3600, t + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vel * 0.05, t + dur * 0.45);
+  g.gain.linearRampToValueAtTime(0, t + dur);
+  n.connect(bp).connect(g).connect(dest);
+}
+function brushTap(t, vel, dest) {
+  const n = noiseSrc(t);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 4200; bp.Q.value = 0.8;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * 0.16, t + 0.006);
+  g.gain.setTargetAtTime(0, t + 0.006, 0.05);
+  n.connect(bp).connect(g).connect(dest);
+}
+// Ballad in half time: the felt quarter note is two chart beats. A sweep on every felt beat,
+// taps and hi-hat on felt 2 and 4, a swung skip tap after them, a feathered bass drum.
+function balladDrums(b, t, spb, dest) {
+  const fb = (b % 8) >> 1;
+  if (b % 2 === 0) {
+    brushSweep(t, spb * 2, fb % 2 ? 0.8 : 1, dest);
+    kick(t, 0.12, dest);
+    if (fb % 2) { brushTap(t, 0.7, dest); hat(t, 0.5, dest); }
+  } else if (fb % 2) {
+    brushTap(t + (2 * state.swing - 1) * spb, 0.35, dest);
+  }
+  if (b === loop.beats - 1) brushTap(t + (2 * state.swing - 1) * spb, 0.5, dest);
+}
+
 function tom(t, f, vel, dest) {
   const o = ctx.createOscillator();
   o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
@@ -1270,13 +1406,17 @@ function scheduleBeat(b, t) {
   const bib = b % 4;
   const s = sess;
   const ev = [];
+  const ballad = loop.feel === 'ballad';
+  if (ballad) balladDrums(b, t, spb, s.drums);
   // Drums: ding, ding-a, ding, ding-a
-  ride(t, bib % 2 ? 0.95 : 0.78, s.drums);
-  const dt = loop.drumTrip && loop.drumTrip[b];
-  if (bib === 1 || bib === 3) { if (!dt) ride(off, 0.55, s.drums); hat(t, 0.8, s.drums); }
-  kick(t, 0.3, s.drums);
-  if (Math.random() < 0.08) snare(off, 0.2 + Math.random() * 0.3, s.drums);
-  if (b === loop.beats - 1 && Math.random() < 0.5) snare(off, 0.55, s.drums);
+  else ride(t, bib % 2 ? 0.95 : 0.78, s.drums);
+  const dt = !ballad && loop.drumTrip && loop.drumTrip[b];
+  if (!ballad) {
+    if (bib === 1 || bib === 3) { if (!dt) ride(off, 0.55, s.drums); hat(t, 0.8, s.drums); }
+    kick(t, 0.3, s.drums);
+    if (Math.random() < 0.08) snare(off, 0.2 + Math.random() * 0.3, s.drums);
+    if (b === loop.beats - 1 && Math.random() < 0.5) snare(off, 0.55, s.drums);
+  }
   // Copied bass triplet on the ride: the beat's own ride hit, then the two triplet partials.
   if (dt) {
     ride(t + spb / 3, 0.55, s.drums);
@@ -1291,9 +1431,9 @@ function scheduleBeat(b, t) {
       bass(m, tt, spb / 3 * 0.92, i === 0 ? 0.95 : 0.82, s.bass);
       ev.push({ time: tt, type: 'bass', note: m, chord: chordAt(loop, b), key: loop.key, tag: 'triplet echoing the right hand' });
     });
-  } else {
+  } else if (!ballad || b % 2 === 0) {
     const bn = loop.bass[b];
-    bass(bn, t, spb * 0.9, bib === 0 ? 1 : 0.88, s.bass);
+    bass(bn, t, spb * (ballad ? 1.85 : 0.9), bib === 0 ? 1 : 0.88, s.bass);
     ev.push({ time: t, type: 'bass', note: bn, chord: chordAt(loop, b), key: loop.key });
   }
   // Left hand
@@ -1401,13 +1541,29 @@ function setPlayButton() {
 
 /* ---------- View ---------- */
 const staff = $('#staff');
+// "A8 A8 B8 A8" -> [{ label, from, to }] in bars; one section covering the chart when absent.
+function sectionsOf(v, bars) {
+  if (!v.form) return [{ label: null, from: 0, to: bars }];
+  let at = 0;
+  return v.form.split(' ').map(t => { const [, label, n] = t.match(/^(.*?)(\d+)$/); const sec = { label, from: at, to: at + +n }; at += +n; return sec; });
+}
 function renderChart(L) {
   staff.innerHTML = '';
   const bars = Math.ceil(L.beats / 4);
+  const secs = sectionsOf(FORMS[L.form].variants[L.vi], bars);
   let prevSym = null;
   for (let b = 0; b < bars; b++) {
+    const sec = secs.find(x => b >= x.from && b < x.to) || secs[0];
+    if (sec.label && b === sec.from) {
+      const h = document.createElement('div'); h.className = 'sec';
+      h.dataset.from = sec.from * 4; h.dataset.to = sec.to * 4;
+      h.innerHTML = `<span class="mark">${sec.label}</span><span class="span">bars ${sec.from + 1}–${sec.to}</span>`;
+      staff.append(h);
+    }
+    const inSec = b - sec.from, lastInSec = b === sec.to - 1;
     const bar = document.createElement('div');
-    bar.className = 'bar' + (b === 0 ? ' rep-start' : '') + (b === bars - 1 ? ' rep-end' : '');
+    bar.className = 'bar' + (b === 0 ? ' rep-start' : '') + (b === bars - 1 ? ' rep-end' : '')
+      + (inSec % 4 === 3 || lastInSec ? ' r4' : '') + (inSec % 2 === 1 || lastInSec ? ' r2' : '');
     bar.dataset.bar = b;
     if (bars > 4) { const num = document.createElement('span'); num.className = 'num'; num.textContent = b + 1; bar.append(num); }
     const syms = document.createElement('div'); syms.className = 'syms';
@@ -1435,7 +1591,7 @@ function renderChart(L) {
   }
   const F = FORMS[L.form], v = F.variants[L.vi];
   $('#variantName').textContent = v.name;
-  $('#keyTag').textContent = `Key of ${KEY_LABELS[L.key]} · ${F.bars}` + (L.turn ? ` · turnaround: ${L.turn.name}` : '');
+  $('#keyTag').textContent = `Key of ${KEY_LABELS[L.key]}${v.minor ? ' minor' : ''} · ${v.bars || F.bars}` + (L.turn ? ` · turnaround: ${L.turn.name}` : '');
   $('#explain').textContent = v.text;
   $('#keyTag').title = L.turn ? `This chorus the last two bars use ${L.turn.text}.` : '';
 }
@@ -1443,7 +1599,7 @@ function highlightBeat(b) {
   staff.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
   const sl = staff.querySelector(`.slash[data-beat="${b}"]`);
   if (sl) sl.classList.add('on');
-  staff.querySelectorAll('.sym').forEach(s => {
+  staff.querySelectorAll('.sym, .sec').forEach(s => {
     if (b >= +s.dataset.from && b < +s.dataset.to) s.classList.add('on');
   });
 }
@@ -1451,7 +1607,8 @@ function updatePending() {
   const p = $('#pending');
   const ref = shown || loop;
   if (state.playing && ref && (ref.form !== state.form || ref.key !== state.key || ref.vi !== state.variant || (state.form === 1 && ref.turnSetting !== state.turn))) {
-    p.textContent = `Next chorus: ${FORMS[state.form].variants[state.variant].name} in ${KEY_LABELS[state.key]}`;
+    const nv = FORMS[state.form].variants[state.variant];
+    p.textContent = `Next chorus: ${nv.name} in ${KEY_LABELS[state.key]}${nv.minor ? ' minor' : ''}`;
     p.classList.remove('off');
   } else p.classList.add('off');
 }
@@ -1671,6 +1828,15 @@ function fillVariants() {
   sel.innerHTML = '';
   FORMS[state.form].variants.forEach((v, i) => sel.add(new Option(v.name, i)));
   sel.value = state.variant;
+  syncFormUI();
+}
+// Standards pick a tune instead of a reharmonization, and each tune brings its own key.
+function syncFormUI() {
+  const v = FORMS[state.form].variants[state.variant];
+  if (v.key !== undefined) { state.key = v.key; $('#key').value = state.key; }
+  $('#turnWrap').hidden = state.form !== 1 || !!v.minor;
+  $('#reharm').hidden = state.form === 2;
+  $('label[for="variant"]').textContent = state.form === 2 ? 'Tune' : 'or choose';
 }
 function changed() {
   if (state.playing) updatePending(); else preview();
@@ -1680,8 +1846,8 @@ function restyle() {
   if (!state.playing) { preview(); return; }
   loop.hits = comp(loop.chords, loop.key);
   loop.line = makeLine(loop.chords, loop.beats, loop.key);
-  loop.bassTrip = bassEchoes(loop);
-  loop.drumTrip = drumEchoes(loop);
+  loop.bassTrip = loop.feel === 'ballad' ? {} : bassEchoes(loop);
+  loop.drumTrip = loop.feel === 'ballad' ? {} : drumEchoes(loop);
   if (state.rh === 'off') showRHIdle();
 }
 
@@ -1694,10 +1860,11 @@ fillVariants();
 $('#tempo').addEventListener('input', e => { state.tempo = +e.target.value; updateOutputs(); });
 $('#swing').addEventListener('input', e => { state.swing = +e.target.value / 100; updateOutputs(); });
 $('#key').addEventListener('change', e => { state.key = +e.target.value; changed(); });
-$('#variant').addEventListener('change', e => { state.variant = +e.target.value; changed(); });
+$('#variant').addEventListener('change', e => { state.variant = +e.target.value; syncFormUI(); changed(); });
 $('#reharm').addEventListener('click', () => {
   state.variant = (state.variant + 1) % FORMS[state.form].variants.length;
   $('#variant').value = state.variant;
+  syncFormUI();
   changed();
 });
 $('#formSeg').addEventListener('click', e => {
@@ -1707,7 +1874,6 @@ $('#formSeg').addEventListener('click', e => {
   state.key = FORMS[f].defaultKey; $('#key').value = state.key;
   state.variant = FORMS[f].defaultVariant;
   setPressed('formSeg', 'form', f);
-  $('#turnWrap').hidden = f !== 1;
   fillVariants();
   changed();
 });
