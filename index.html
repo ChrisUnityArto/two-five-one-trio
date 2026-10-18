@@ -109,6 +109,15 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 }
 .seg button:first-child { border-radius: 3px 0 0 3px; margin-left: 0; }
 .seg button:last-child { border-radius: 0 3px 3px 0; }
+.rh-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sound-toggle {
+  font-family: var(--f-body); font-size: 14px; font-weight: 500;
+  background: none; color: var(--ink); border: 1px dashed var(--rule); border-radius: 3px;
+  padding: 7px 12px; cursor: pointer;
+}
+.sound-toggle[aria-expanded="true"] { border-style: solid; border-color: var(--ink); }
+.sound-toggle .chev { display: inline-block; transition: transform .15s; }
+.sound-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); position: relative; }
 .check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; padding-block: 7px; cursor: pointer; }
 .check input { accent-color: var(--brass); width: 16px; height: 16px; margin: 0; }
@@ -244,6 +253,10 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 /* Mixer */
 .mixer { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 24px; padding-top: 18px; border-top: 1px solid var(--rule); }
 .mixer .ctrl input[type="range"] { width: 100%; }
+.fmtune { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 24px; padding-top: 14px; border-top: 1px solid var(--rule); }
+.fmtune .ctrl input[type="range"] { width: 100%; }
+.fmtune output { font-family: var(--f-mono); font-size: 12px; min-width: 3.5em; }
+@media (max-width: 760px) { .fmtune { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .foot { color: var(--muted); font-size: 13px; margin: 0; }
 
 /* Guitar chord boxes: fixed sizes so changing chords never moves anything. */
@@ -378,11 +391,22 @@ kbd { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--rule)
       </div>
       <div class="ctrl">
         <span class="label" id="rhLbl">Right hand</span>
+        <div class="rh-row">
         <div class="seg" role="group" aria-labelledby="rhLbl" id="rhSeg">
           <button type="button" id="rhOff" data-rh="off" aria-pressed="false">Off</button>
           <button type="button" id="rhOn" data-rh="scale" aria-pressed="false">Chord scale lines</button>
           <button type="button" id="rhBH" data-rh="bh" aria-pressed="true">Barry Harris lines</button>
           <button type="button" id="rhBird" data-rh="bird" aria-pressed="false">Bird lines</button>
+          <button type="button" id="rhTrane" data-rh="trane" aria-pressed="false">Coltrane sheets</button>
+        </div>
+        <button type="button" class="sound-toggle" id="soundToggle" aria-expanded="false" aria-controls="toneCtrl fmTune">Lead sound <span class="chev" aria-hidden="true">▾</span></button>
+        </div>
+      </div>
+      <div class="ctrl" id="toneCtrl" hidden>
+        <span class="label" id="toneLbl">Lead sound</span>
+        <div class="seg" role="group" aria-labelledby="toneLbl" id="toneSeg">
+          <button type="button" data-tone="ep" aria-pressed="false">Electric piano</button>
+          <button type="button" data-tone="blend" aria-pressed="true">FM blend</button>
         </div>
       </div>
       <div class="ctrl">
@@ -391,6 +415,44 @@ kbd { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--rule)
       </div>
     </div>
     <p class="style-note" id="styleNote"></p>
+    <div class="fmtune" id="fmTune" role="group" aria-label="Tune the FM blend" hidden>
+      <div class="ctrl">
+        <label class="label" for="fmPick">Pick attack</label>
+        <div class="row"><input id="fmPick" type="range" min="0" max="3" step="0.05" value="0.75"><output id="fmPickOut" for="fmPick"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmBody">Tone brightness</label>
+        <div class="row"><input id="fmBody" type="range" min="0.3" max="2" step="0.05" value="1.5"><output id="fmBodyOut" for="fmBody"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmOpen">Opens up</label>
+        <div class="row"><input id="fmOpen" type="range" min="1" max="1.8" step="0.02" value="1.52"><output id="fmOpenOut" for="fmOpen"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmDrift">Drift</label>
+        <div class="row"><input id="fmDrift" type="range" min="1.1" max="1.5" step="0.005" value="1.37"><output id="fmDriftOut" for="fmDrift"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmVib">Vibrato</label>
+        <div class="row"><input id="fmVib" type="range" min="0" max="25" step="1" value="17"><output id="fmVibOut" for="fmVib"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmScoop">Scoop</label>
+        <div class="row"><input id="fmScoop" type="range" min="0.8" max="1.2" step="0.005" value="0.92"><output id="fmScoopOut" for="fmScoop"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmScoopT">Scoop time</label>
+        <div class="row"><input id="fmScoopT" type="range" min="10" max="90" step="1" value="30"><output id="fmScoopTOut" for="fmScoopT"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmHold">Sustain</label>
+        <div class="row"><input id="fmHold" type="range" min="0.525" max="0.595" step="0.001" value="0.568"><output id="fmHoldOut" for="fmHold"></output></div>
+      </div>
+      <div class="ctrl">
+        <label class="label" for="fmFade">Sustain settle</label>
+        <div class="row"><input id="fmFade" type="range" min="0.1" max="1.5" step="0.02" value="0.5"><output id="fmFadeOut" for="fmFade"></output></div>
+      </div>
+    </div>
   </section>
 
   <section class="sheet" aria-label="Lead sheet">
@@ -725,7 +787,7 @@ const TURNS = [
 
 const state = {
   form: 0, key: 0, variant: 0, tempo: 138, swing: 0.64, playing: false, paused: false,
-  lh: 'bh', rh: 'bh', turn: 'rotate', turns16: false,
+  lh: 'bh', rh: 'bh', tone: 'blend', fm: { pick: 0.75, body: 1.5, open: 1.52, drift: 1.37, vib: 17, scoop: 0.92, scoopT: 30, hold: 0.568, fade: 0.5 }, turn: 'rotate', turns16: false,
   mix: { piano: 0.72, rh: 0.7, bass: 0.85, drums: 0.62 },
 };
 let prevVoicing = null;
@@ -1382,9 +1444,92 @@ function bhLine(chords, beats, key, bird = false) {
   prevLine = pitch;
   return out;
 }
+/* Coltrane sheets of sound: dense runs, one cell per beat (sixteenths, or eighths when fast).
+   Cells: an arpeggio sweep through the chord tones plus the 9th, a 1-2-3-5 cell, or a scale
+   run. Every beat starts on a chord tone. On a V7 resolving down a fifth, sometimes superimpose
+   Coltrane changes: 1-2-3-5 cells in the keys a major third away (♭VI, III) before landing. */
+function traneLine(chords, beats, key) {
+  lineChords = chords;
+  const out = [], sub = state.tempo <= 200 ? 4 : 2, LO = 60, HI = 91;
+  const chordAt = b => chordAtList(chords, b);
+  let pitch = prevLine, dir = Math.random() < 0.5 ? 1 : -1, lastC = null, S = null;
+  const emit = (t, midi, len, vel, c, sc, tag) => { out.push({ t, len, midi, vel, chord: c, S: sc, tag, straight: sub === 4 }); pitch = midi; };
+  const kOf = (m, sc) => { let best = 0, bd = Infinity; for (let k = 10; k <= 130; k++) { const d = Math.abs(lineMidi(k, sc) - m); if (d < bd) { bd = d; best = k; } } return best; };
+  const vel = i => i === 0 ? 0.7 + Math.random() * 0.08 : 0.6 + Math.random() * 0.1;
+  const lay = (b, ms, c, sc, tag) => ms.forEach((m, i) => emit(b + i / sub, m, 1 / sub, vel(i % sub), c, sc, tag));
+  // Major 1-2-3-5 from a root, nearest the current pitch, kept in range
+  const cell1235 = (root, up) => {
+    let base = nearRH(root, pitch + (up ? 2 : -9));
+    while (base + 7 > HI) base -= 12;
+    while (base < LO) base += 12;
+    const ms = [0, 2, 4, 7].map(x => base + x);
+    return up ? ms : ms.reverse();
+  };
+  let b = 1 + Math.floor(Math.random() * 2);
+  while (b < beats - 2) {
+    let left = 8 + Math.floor(Math.random() * 17);
+    while (left > 0 && b < beats - 2) {
+      const c = chordAt(b);
+      if (c !== lastC) { S = lineScale(c, key); lastC = c; }
+      if (pitch >= HI - 5) dir = -1; else if (pitch <= LO + 5) dir = 1;
+      else if (Math.random() < 0.15) dir = -dir;
+      let n = 1; while (b + n < beats && chordAt(b + n) === c) n++;
+      const nx = b + n < beats ? chordAt(b + n) : null;
+      const isDom = ['7', '9', '13', '7b9', 'alt'].includes(c.q);
+      // Coltrane changes over V7 → I
+      if (sub === 4 && isDom && nx && mod12(nx.root - c.root) === 5 && n >= 2 && b + 2 <= beats - 2 && Math.random() < 0.22) {
+        const I = nx.root, ks = [mod12(I + 8), mod12(I + 4)];
+        const tag = `Coltrane changes over ${plainChord(c, key)}: 1‑2‑3‑5 in ${spell(ks[0], key)}, then ${spell(ks[1], key)}, on the way to ${spell(I, key)}`;
+        ks.forEach((r, i) => lay(b + i, cell1235(r, dir > 0), c, S, tag));
+        b += 2; left -= 2; continue;
+      }
+      const r = Math.random();
+      const span = sub === 4 ? 1 : 2;   // a four-note cell is one beat of sixteenths or two of eighths
+      if (r < 0.3 && S.sc.length === 7 && n >= span) {
+        // 1-2-3-5 cell on the root, 3rd or 5th, up or down
+        const q = Q[c.q], iv = [0, q.third, q.fifth][Math.floor(Math.random() * 3)];
+        let k = kOf(nearRH(c.root + iv, pitch + dir * 3), S);
+        while (lineMidi(k + 4, S) > HI) k -= 7;
+        while (lineMidi(k, S) < LO) k += 7;
+        let ms = [0, 1, 2, 4].map(x => lineMidi(k + x, S));
+        if (dir < 0) ms = ms.reverse();
+        lay(b, ms, c, S, `1‑2‑3‑5 cell on the ${FUNC[mod12(ms[dir < 0 ? 3 : 0] - c.root)]}, ${dir < 0 ? 'down' : 'up'}`);
+        b += span; left -= span; continue;
+      }
+      const ms = [];
+      if (r < 0.75) {
+        // Arpeggio sweep through the chord tones and the 9th
+        const ext = new Set([...S.ct]); if (S.sc.includes(2)) ext.add(mod12(c.root + 2));
+        const pool = []; for (let m = LO; m <= HI; m++) if (ext.has(mod12(m))) pool.push(m);
+        let i = dir > 0 ? pool.findIndex(m => m > pitch) : pool.length - 1 - [...pool].reverse().findIndex(m => m < pitch);
+        if (i < 0 || i >= pool.length) i = Math.max(0, Math.min(pool.length - 1, pool.findIndex(m => m >= pitch)));
+        if (!S.ct.has(mod12(pool[i]))) i += dir;
+        for (let j = 0; j < sub; j++) {
+          if (i <= 0 || i >= pool.length - 1) dir = -dir;
+          ms.push(pool[Math.max(0, Math.min(pool.length - 1, i))]); i += dir;
+        }
+        lay(b, ms, c, S, `arpeggio sweep ${dir > 0 ? 'up' : 'down'} through ${plainChord(c, key)} with the 9th`);
+      } else {
+        // Scale run from a chord tone
+        let k = kOf(pitch + dir, S);
+        while (!isCT(k, S)) k += dir;
+        for (let j = 0; j < sub; j++) { ms.push(lineMidi(k, S)); k += dir; }
+        lay(b, ms, c, S, `${S.name} run ${dir > 0 ? 'up' : 'down'} from the ${FUNC[mod12(ms[0] - c.root)]}`);
+      }
+      b += 1; left -= 1;
+    }
+    if (b >= beats - 1) break;
+    // Land on a chord tone on the beat, then a short breath
+    const c = chordAt(b), land = landingNote(c, Math.max(RH_LO, Math.min(RH_HI, pitch)), dir);
+    emit(b, land, 1, 0.72, c, lineScale(c, key), `phrase lands on the ${FUNC[mod12(land - c.root)]}`);
+    b += 2 + Math.floor(Math.random() * 3);
+  }
+  prevLine = Math.max(RH_LO, Math.min(RH_HI, pitch));
+  return out;
+}
 const makeLine = (chords, beats, key) =>
   state.rh === 'scale' ? scaleLine(chords, beats, key) : state.rh === 'bh' ? bhLine(chords, beats, key)
-  : state.rh === 'bird' ? bhLine(chords, beats, key, true) : [];
+  : state.rh === 'bird' ? bhLine(chords, beats, key, true) : state.rh === 'trane' ? traneLine(chords, beats, key) : [];
 
 function prepare() {
   const v = FORMS[state.form].variants[state.variant], key = state.key;
@@ -1525,6 +1670,51 @@ function ep(midi, t, dur, vel, dest) {
   car.connect(amp).connect(dest);
   const end = t + dur + 0.36;
   [car, mod, tine].forEach(o => { o.start(t); o.stop(end); });
+}
+// Lead FM blend: one FM pair that is sax and electric guitar at once, as cheap as the electric piano.
+// A carrier and modulator at the same pitch give a saw-like spectrum (C's breadth) that
+// stays smooth because it is made of sines, with no clipping or noise to fuzz it.
+// The modulation index does the shaping: a bright spike for the pick, a quick fall, then it
+// holds and slowly opens up like breath pushing a horn. The modulator is detuned by about a
+// hertz so the overtones drift against each other, a chorus for free. A short 7:1 partial
+// gives the pick. One shared vibrato oscillator feeds all long notes.
+let vibBus = null;
+function fmLead(midi, t, dur, vel, dest) {
+  const P = state.fm;
+  if (!vibBus || vibBus.context !== ctx) {
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 5.3;
+    vibBus = ctx.createGain(); vibBus.gain.value = P.vib;
+    lfo.connect(vibBus); lfo.start();
+  }
+  vibBus.gain.value = P.vib;
+  const f = mtof(midi), beat = P.drift, sc = 1 - P.scoop / 100;
+  const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain();
+  // A small scoop up into the pitch, sax style
+  car.frequency.setValueAtTime(f * sc, t); car.frequency.linearRampToValueAtTime(f, t + P.scoopT / 1000);
+  mod.frequency.setValueAtTime((f + beat) * sc, t); mod.frequency.linearRampToValueAtTime(f + beat, t + P.scoopT / 1000);
+  const sus = P.body * (0.8 + vel * 0.3);
+  mg.gain.setValueAtTime(f * Math.max(sus, (1.7 + vel * 1.2) * P.pick), t);
+  mg.gain.setTargetAtTime(f * sus, t, 0.045);
+  mg.gain.setTargetAtTime(f * sus * P.open, t + 0.1, 0.5);
+  mod.connect(mg).connect(car.frequency);
+  const pk = ctx.createOscillator(); pk.frequency.value = f * 7;
+  const pg = ctx.createGain();
+  pg.gain.setValueAtTime(f * 0.45 * vel * P.pick, t); pg.gain.setTargetAtTime(0, t, 0.012);
+  pk.connect(pg).connect(car.frequency);
+  if (dur > 0.35) vibBus.connect(car.detune);
+  const amp = ctx.createGain(), peak = 0.07 * vel;
+  amp.gain.setValueAtTime(0, t);
+  amp.gain.linearRampToValueAtTime(peak, t + 0.006);
+  amp.gain.setTargetAtTime(peak * P.hold, t + 0.006, P.fade);
+  amp.gain.setTargetAtTime(0, t + dur, 0.05);
+  car.connect(amp).connect(dest);
+  const end = t + dur + 0.3;
+  [car, mod, pk].forEach(o => { o.start(t); o.stop(end); });
+  if (dur > 0.35) car.onended = () => { try { vibBus.disconnect(car.detune); } catch (e) {} };
+}
+function leadTone(midi, t, dur, vel, dest) {
+  if (state.tone === 'ep') ep(midi, t, dur, vel, dest);
+  else fmLead(midi, t, dur, vel, dest);
 }
 function pianoChord(notes, t, dur, vel, dest) {
   notes.forEach((m, i) => ep(m, t + i * 0.004 + Math.random() * 0.006, dur, vel * (0.9 + Math.random() * 0.15), dest));
@@ -1712,7 +1902,7 @@ function scheduleBeat(b, t) {
     const isOff = !n.straight && Math.abs(frac - 0.5) < 1e-6;   // sixteenths stay even
     const nt = t + (isOff ? lsw : frac) * spb;
     const dur = n.len === 0.5 ? (isOff ? 1 - lsw : lsw) * spb * 0.97 : n.len * spb * 0.95;
-    ep(n.midi, nt + Math.random() * 0.006, dur, n.vel, s.rh);
+    leadTone(n.midi, nt + Math.random() * 0.006, dur, n.vel, s.rh);
     ev.push({ time: nt, type: 'rh', note: n, key: loop.key });
   });
   ev.sort((a, z) => a.time - z.time);
@@ -2169,6 +2359,7 @@ function updateStyleNote() {
   if (state.lh === 'bh') parts.push('<b>Barry Harris left hand.</b> Every chord is heard as a 6th chord or a minor 6th chord: D–7 is F6, G7 is D–6, G7alt is A♭–6. Its 6th-diminished scale alternates that chord with a diminished 7th, so the hand moves in drop-2 block chords: chord, diminished, next inversion.');
   else parts.push('<b>Rootless left hand.</b> Four-note voicings built from 3rds, 7ths and extensions, each moving to the nearest notes of the next chord. The bass covers the roots.');
   if (state.rh === 'bh') parts.push('<b>Barry Harris lines.</b> The chord scale lines plus his devices. When a chord tone would land off the beat, the line puts a chromatic half step in front of it so it lands on the beat. It also uses pivots (3‑5‑7‑9 up from the 3rd, then back down), enclosures around a guide tone of the next chord, triplet arpeggios and chromatic triplet runs. Phrases always end on a chord tone. The readout names each device as it plays.');
+  if (state.rh === 'trane') parts.push('<b>Coltrane sheets.</b> The “sheets of sound” of Coltrane’s late-1950s records: long, nearly unbroken runs of sixteenths (eighths above 200 BPM) over a wider range, with only short breaths between phrases. Each beat is one of three cells. An arpeggio sweeps through the chord tones and the 9th. A 1‑2‑3‑5 cell, the pattern from “Giant Steps”, starts on the root, 3rd or 5th. Or a scale run starts from a chord tone. Every beat starts on a chord tone. When a dominant resolves down a fifth, the line sometimes superimposes Coltrane changes: 1‑2‑3‑5 cells in the keys a major third either side of the target before it lands. The readout names each cell.');
   if (state.rh === 'bird') parts.push('<b>Bird lines.</b> Charlie Parker’s phrasing on the same chord scales. Phrases are a mix of long eighth-note runs and short stabs, and most end on an offbeat with an accent. Arpeggios run down from the 9th (9‑7‑5‑3) into the next chord’s 3rd. On a V7 going home the ♭9 drops a half step to the 5th of the I, and across other changes the 7th falls to the next 3rd. Phrases often open with a quick triplet turn around a chord tone, and there are short bursts of sixteenths. Enclosures and chromatic approach notes stay; Barry’s pivots are rarer. The readout names each device as it plays.');
   if ((state.rh === 'bh' || state.rh === 'bird') && state.turns16) parts.push('<b>16th-note turns.</b> Now and then a beat gets four sixteenths: a turn around a chord tone, a chromatic run like 3 down to the root, or a scale run with a half step into the next chord tone. They switch off above 220 BPM.');
   if (state.rh === 'scale') parts.push('<b>Chord scale lines.</b> Eighth notes on each chord’s own scale: major, Dorian, Mixolydian, Lydian dominant for tritone subs, altered, Locrian ♮2, melodic minor or diminished. Each new chord starts on one of its chord tones and phrases end on one. There are no chromatic notes.');
@@ -2275,6 +2466,28 @@ $('#lhSeg').addEventListener('click', e => {
   state.lh = b.dataset.lh;
   setPressed('lhSeg', 'lh', state.lh);
   restyle();
+});
+$('#toneSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.tone = b.dataset.tone;
+  setPressed('toneSeg', 'tone', state.tone);
+  showSound();
+});
+let soundOpen = false;
+const showSound = () => {
+  $('#toneCtrl').hidden = !soundOpen;
+  $('#fmTune').hidden = !soundOpen || state.tone !== 'blend';
+};
+$('#soundToggle').addEventListener('click', e => {
+  soundOpen = !soundOpen;
+  e.currentTarget.setAttribute('aria-expanded', String(soundOpen));
+  showSound();
+});
+[['fmPick', 'pick', '×'], ['fmBody', 'body', ''], ['fmOpen', 'open', '×'], ['fmDrift', 'drift', ' Hz'],
+ ['fmVib', 'vib', '¢'], ['fmScoop', 'scoop', '%'], ['fmScoopT', 'scoopT', ' ms'], ['fmHold', 'hold', ''], ['fmFade', 'fade', ' s']].forEach(([id, k, u]) => {
+  const el = $('#' + id), out = $('#' + id + 'Out');
+  const set = () => { state.fm[k] = +el.value; out.textContent = el.value + u; };
+  set(); el.addEventListener('input', set);
 });
 $('#rhSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
