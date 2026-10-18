@@ -263,6 +263,10 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 .guitar { display: flex; flex-direction: column; gap: 12px; padding-top: 18px; border-top: 1px solid var(--rule); }
 .guitar-head { display: flex; flex-direction: column; gap: 4px; }
 .guitar-head p { margin: 0; color: var(--muted); font-size: 13px; }
+.tab-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tab-save { font-family: var(--f-body); font-size: 13px; font-weight: 500; background: var(--sheet); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+.tab-save:disabled { opacity: 0.45; cursor: default; }
 .g-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 36px; }
 .g-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .g-title { display: flex; align-items: baseline; gap: 10px; height: 30px; }
@@ -291,7 +295,8 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 .tb-ch { fill: var(--ink); font-family: var(--f-mono); font-size: 10px; font-weight: 500; }
 .tb-num { fill: var(--muted); font-family: var(--f-mono); font-size: 8px; }
 .tb-n rect { fill: var(--paper); }
-.tb-n text { fill: var(--ink); font-family: var(--f-mono); font-size: 10px; font-weight: 500; }
+.tb-n text { fill: var(--ink); font-family: var(--f-mono); font-size: 9px; font-weight: 500; letter-spacing: -0.4px; }
+.tb-dense .tb-n text { font-size: 7.5px; letter-spacing: -0.6px; }
 .tb-n.on rect { fill: var(--brass); }
 .tb-n.on text { fill: var(--on-brass); }
 .tb-empty { color: var(--muted); font-size: 13px; margin: 6px; }
@@ -522,7 +527,10 @@ kbd { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--rule)
 
   <section class="tabsec" aria-label="Lead line tab">
     <div class="guitar-head">
-      <span class="label">Lead line tab</span>
+      <div class="tab-title">
+        <span class="label">Lead line tab</span>
+        <button type="button" class="tab-save" id="saveTab" disabled>Open in new tab</button>
+      </div>
       <p>The right-hand line for this chorus, written for guitar: an octave down, as guitar music is notated, and fingered to stay in one position where it can, with no open strings. Each chorus gets a new line; the note playing now is lit.</p>
     </div>
     <div class="tabwrap" id="tabWrap"></div>
@@ -1929,7 +1937,7 @@ function drawFrame() {
     if (e.type === 'loop') {
       $('#chorusOut').textContent = e.chorus;
       if (!sameChart(shown, e.loop)) renderChart(e.loop);
-      shown = e.loop; updatePending(); renderTab(shown);
+      shown = e.loop; tabChorus = e.chorus; updatePending(); renderTab(shown);
     }
     else if (e.type === 'beat') { highlightBeat(e.beat); showGuitar(shown, e.beat); }
     else if (e.type === 'piano') showPiano(e.hit, e.key);
@@ -2127,7 +2135,7 @@ function preview() {
   highlightBeat(0);
   gShown = null;
   showGuitar(loop, 0);
-  renderTab(loop);
+  tabChorus = null; renderTab(loop);
   const first = loop.hits.find(h => h.chord === loop.chords[0]) || loop.hits[0];
   showPiano(first, loop.key);
   showBass(loop.bass[0], loop.chords[0], loop.key);
@@ -2270,18 +2278,20 @@ function fingerLine(line) {
   for (let i = line.length - 1; i >= 0; i--) { out[i] = opts[i][j]; if (i > 0) j = back[i - 1][j]; }
   return out;
 }
-let tabEls = null;
+let tabEls = null, tabChorus = null;
 function renderTab(L) {
   const wrap = $('#tabWrap');
   tabEls = null;
+  $('#saveTab').disabled = true;
   if (!L || state.rh === 'off' || !L.line.length) {
     wrap.innerHTML = `<p class="tb-empty">${state.rh === 'off' ? 'Switch on a right-hand line above to see its tab.' : 'No line this chorus.'}</p>`;
     return;
   }
   const line = L.line.slice().sort((a, b) => a.t - b.t);
   const fing = fingerLine(line);
-  const bars = Math.ceil(L.beats / 4), rows = Math.ceil(bars / 4);
-  const W = 800, LM = 26, BW = (W - LM - 4) / 4, SP = 9, TOP = 22, RH = TOP + SP * 5 + 18;
+  const bpr = 4, dense = line.some(n => n.len < 0.5 - 1e-6);   // sixteenths get smaller numbers
+  const bars = Math.ceil(L.beats / 4), rows = Math.ceil(bars / bpr);
+  const W = 800, LM = 26, BW = (W - LM - 4) / bpr, SP = 9, TOP = 22, RH = TOP + SP * 5 + 18;
   const yS = st => TOP + (st - 1) * SP;
   let g = '';
   for (let r = 0; r < rows; r++) {
@@ -2289,12 +2299,12 @@ function renderTab(L) {
     g += `<g transform="translate(0 ${y0})">`;
     for (let st = 1; st <= 6; st++) g += `<line class="tb-line" x1="${LM}" x2="${W - 4}" y1="${yS(st)}" y2="${yS(st)}"/>`;
     ['T', 'A', 'B'].forEach((ch, i) => { g += `<text class="tb-num" x="8" y="${yS(2) + i * 11 + 1}">${ch}</text>`; });
-    for (let i = 0; i <= 4; i++) {
-      const b = r * 4 + i;
+    for (let i = 0; i <= bpr; i++) {
+      const b = r * bpr + i;
       if (b > bars) break;
       const x = LM + i * BW;
       g += `<line class="tb-bar" x1="${x}" x2="${x}" y1="${yS(1)}" y2="${yS(6)}"/>`;
-      if (i < 4 && b < bars) {
+      if (i < bpr && b < bars) {
         g += `<text class="tb-num" x="${x + 2}" y="${TOP - 13}">${b + 1}</text>`;
         L.chords.filter(c => c.start >= b * 4 && c.start < b * 4 + 4).forEach(c => {
           const cx = x + 14 + (c.start - b * 4) / 4 * (BW - 18);
@@ -2305,14 +2315,57 @@ function renderTab(L) {
     g += '</g>';
   }
   line.forEach((n, i) => {
-    const b = Math.floor(n.t / 4), r = Math.floor(b / 4), col = b % 4;
+    const b = Math.floor(n.t / 4), r = Math.floor(b / bpr), col = b % bpr;
     const x = LM + col * BW + 14 + (n.t - b * 4) / 4 * (BW - 18), y = r * RH + yS(fing[i].st);
-    const f = String(fing[i].f), w = f.length * 6.2 + 3;
+    const f = String(fing[i].f), w = dense ? f.length * 4.1 + 1.6 : f.length * 5.2 + 3;
     g += `<g class="tb-n" data-i="${i}"><rect x="${x - w / 2}" y="${y - 5.5}" width="${w}" height="11" rx="1.5"/><text x="${x}" y="${y + 3.5}" text-anchor="middle">${f}</text></g>`;
   });
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${rows * RH}" role="img" aria-label="Guitar tab of the lead line, ${bars} bars">${g}</svg>`;
-  tabEls = { L, line, nodes: wrap.querySelectorAll('.tb-n'), on: null, rowH: RH, rows };
+  wrap.innerHTML = `<svg${dense ? ' class="tb-dense"' : ''} viewBox="0 0 ${W} ${rows * RH}" role="img" aria-label="Guitar tab of the lead line, ${bars} bars">${g}</svg>`;
+  tabEls = { L, line, nodes: wrap.querySelectorAll('.tb-n'), on: null, rowH: RH, rows, bpr };
+  $('#saveTab').disabled = false;
 }
+// The tab for this chorus as a standalone page: a new browser tab, or a download if pop-ups are blocked.
+function saveTab() {
+  const svg = $('#tabWrap svg');
+  if (!svg) return;
+  const clone = svg.cloneNode(true);
+  clone.querySelectorAll('.on').forEach(n => n.classList.remove('on'));
+  const esc = x => String(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+  const name = $('#variantName').textContent, style = $('#rhSeg [aria-pressed="true"]');
+  const bits = [$('#keyTag').textContent, `${state.tempo} BPM`, style ? style.textContent : '', tabChorus !== null && shown === tabEls.L ? `chorus ${tabChorus + 1}` : '', new Date().toLocaleString()].filter(Boolean);
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(name)} · lead line</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 28px; color: #1c1b19; background: #fff; }
+  h1 { font-size: 22px; margin: 0 0 4px; } p { margin: 0 0 18px; color: #6b675f; font-size: 13px; }
+  svg { width: 100%; height: auto; display: block; }
+  .tb-line { stroke: #9a958c; stroke-width: 0.7; } .tb-bar { stroke: #1c1b19; stroke-width: 1; }
+  .tb-ch { fill: #1c1b19; font: 500 10px ui-monospace, Menlo, Consolas, monospace; }
+  .tb-num { fill: #9a958c; font: 8px ui-monospace, Menlo, Consolas, monospace; }
+  .tb-n rect { fill: #fff; } .tb-n text { fill: #1c1b19; font: 500 9px ui-monospace, Menlo, Consolas, monospace; letter-spacing: -0.4px; }
+  .tb-dense .tb-n text { font-size: 7.5px; letter-spacing: -0.6px; }
+  @media print { body { margin: 10mm; } }
+</style></head><body>
+<h1>${esc(name)}</h1>
+<p>Lead line tab · ${bits.map(esc).join(' · ')}</p>
+${clone.outerHTML}
+</body></html>`;
+  const file = `${name.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'lead-line'}-tab.html`;
+  openTab(html, file);
+}
+function openTab(html, file) {
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  let w = null;
+  try { w = window.open(url, '_blank'); } catch (e) {}
+  if (!w) {
+    const a = document.createElement('a');
+    a.href = url; a.download = file;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+$('#saveTab').addEventListener('click', saveTab);
 function tabLight(n) {
   if (!tabEls) return;
   const i = tabEls.line.indexOf(n);
@@ -2321,7 +2374,7 @@ function tabLight(n) {
   const el = tabEls.nodes[i];
   el.classList.add('on'); tabEls.on = el;
   const wrap = $('#tabWrap'), svg = wrap.querySelector('svg');
-  const row = Math.floor(Math.floor(n.t / 4) / 4), scale = svg.clientHeight / (tabEls.rows * tabEls.rowH);
+  const row = Math.floor(Math.floor(n.t / 4) / tabEls.bpr), scale = svg.clientHeight / (tabEls.rows * tabEls.rowH);
   const top = row * tabEls.rowH * scale;
   if (top < wrap.scrollTop || top + tabEls.rowH * scale > wrap.scrollTop + wrap.clientHeight)
     wrap.scrollTo({ top: Math.max(0, top - 8), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
